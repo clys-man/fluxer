@@ -118,17 +118,24 @@ jobs:
           cargo run --locked --quiet --manifest-path ${{ github.workspace }}/_ci/tools/ci/Cargo.toml -- build-desktop
           --step build_electron_main
 
-      - name: Verify embedded Koopa URLs
+      - name: Verify Koopa URL configuration
         working-directory: ${{ env.WORKDIR }}/fluxer_desktop
         shell: pwsh
         run: |
-          $bundle = Get-Content -Raw dist/main/index.js
-          if (-not $bundle.Contains('https://koopa.ospinh.com')) {
-            throw 'Koopa URL is missing from the Electron main bundle.'
+          $constants = Get-Content -Raw src/common/Constants.ts
+          $expected = @(
+            "STABLE_APP_URL = 'https://koopa.ospinh.com'",
+            "CANARY_APP_URL = 'https://koopa.ospinh.com'",
+            "STATIC_CDN_URL = 'https://koopa.ospinh.com'"
+          )
+          foreach ($entry in $expected) {
+            if (-not $constants.Contains($entry)) {
+              throw "Missing expected Koopa URL configuration: $entry"
+            }
           }
           foreach ($legacyUrl in @('https://web.fluxer.app', 'https://web.canary.fluxer.app', 'https://fluxerstatic.com')) {
-            if ($bundle.Contains($legacyUrl)) {
-              throw "Legacy URL remains in the Electron main bundle: $legacyUrl"
+            if ($constants.Contains($legacyUrl)) {
+              throw "Legacy URL remains in Constants.ts: $legacyUrl"
             }
           }
 
