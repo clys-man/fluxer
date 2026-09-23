@@ -2,6 +2,11 @@ name: Build Koopa desktop for Windows
 
 on:
   workflow_dispatch:
+    inputs:
+      build_version:
+        description: Explicit CalVer version for this Windows build (for example, 2026.923.212325).
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -15,9 +20,9 @@ env:
   BUILD_CHANNEL: stable
   RELEASE_CHANNEL: stable
   PUBLIC_RELEASE_CHANNEL: stable
-  VERSION: 2026.922.1
-  BUILD_VERSION: 2026.922.1
-  PUBLIC_BUILD_VERSION: 2026.922.1
+  VERSION: ${{ inputs.build_version }}
+  BUILD_VERSION: ${{ inputs.build_version }}
+  PUBLIC_BUILD_VERSION: ${{ inputs.build_version }}
   DESKTOP_PLATFORM: windows
   DESKTOP_ARCH: x64
   PLATFORM: windows
