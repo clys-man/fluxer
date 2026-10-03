@@ -43,13 +43,13 @@ describe('buildAPIServerOptions', () => {
 		expect(server.requestTimeout).toBe(120_000);
 	});
 
-	test('carries the operator header timeout from the environment into the server', async () => {
+	test('passes the operator header timeout from the environment into the server', async () => {
 		const server = await listenWithEnv({FLUXER_API_HEADERS_TIMEOUT_MS: '45000'});
 		expect(server.headersTimeout).toBe(45_000);
 		expect(server.requestTimeout).toBe(120_000);
 	});
 
-	test('carries the operator request timeout from the environment into the server', async () => {
+	test('passes the operator request timeout from the environment into the server', async () => {
 		const server = await listenWithEnv({FLUXER_API_REQUEST_TIMEOUT_MS: '600000'});
 		expect(server.headersTimeout).toBe(30_000);
 		expect(server.requestTimeout).toBe(600_000);
@@ -134,7 +134,7 @@ describe('buildAPIConfigFromMaster stripe legacy prices', () => {
 		master = await loadConfig();
 	});
 
-	it('carries the retired stripe price map from master config onto the api config', () => {
+	it('copies the retired stripe price map from master config onto the api config', () => {
 		const legacyPrices = {
 			monthly_brl: ['price_retired_monthly_brl'],
 			yearly_brl: ['price_retired_yearly_brl_a', 'price_retired_yearly_brl_b'],
@@ -145,7 +145,7 @@ describe('buildAPIConfigFromMaster stripe legacy prices', () => {
 		);
 	});
 
-	it('carries the retired price map even when no live prices are configured', () => {
+	it('copies the retired price map even when no live prices are configured', () => {
 		const withoutPrices: MasterConfig = {
 			...master,
 			integrations: {
@@ -170,13 +170,12 @@ describe('buildAPIConfigFromMaster stripe legacy prices', () => {
 function withOptionalOutboundLookups(
 	master: MasterConfig,
 	selfHosted: boolean,
-	overrides: {torExitList?: boolean; breachedPasswordCheck?: boolean} = {},
+	overrides: {breachedPasswordCheck?: boolean} = {},
 ): MasterConfig {
 	return {
 		...master,
 		integrations: {
 			...master.integrations,
-			tor_exit_list: {enabled: overrides.torExitList},
 			breached_password_check: {enabled: overrides.breachedPasswordCheck},
 		},
 		instance: {
@@ -192,31 +191,23 @@ describe('buildAPIConfigFromMaster optional outbound lookups', () => {
 		master = await loadConfig();
 	});
 
-	it('keeps both lookups on when the instance is not self-hosted', () => {
+	it('keeps the lookup on when the instance is not self-hosted', () => {
 		const config = buildAPIConfigFromMaster(withOptionalOutboundLookups(master, false));
-		expect(config.torExitList.enabled).toBe(true);
 		expect(config.breachedPasswordCheck.enabled).toBe(true);
 	});
 
-	it('leaves both lookups off on a self-hosted instance', () => {
+	it('leaves the lookup off on a self-hosted instance', () => {
 		const config = buildAPIConfigFromMaster(withOptionalOutboundLookups(master, true));
-		expect(config.torExitList.enabled).toBe(false);
 		expect(config.breachedPasswordCheck.enabled).toBe(false);
 	});
 
-	it('lets a self-hosted operator switch each lookup on', () => {
-		const config = buildAPIConfigFromMaster(
-			withOptionalOutboundLookups(master, true, {torExitList: true, breachedPasswordCheck: true}),
-		);
-		expect(config.torExitList.enabled).toBe(true);
+	it('lets a self-hosted operator switch the lookup on', () => {
+		const config = buildAPIConfigFromMaster(withOptionalOutboundLookups(master, true, {breachedPasswordCheck: true}));
 		expect(config.breachedPasswordCheck.enabled).toBe(true);
 	});
 
-	it('lets an operator switch each lookup off when the instance is not self-hosted', () => {
-		const config = buildAPIConfigFromMaster(
-			withOptionalOutboundLookups(master, false, {torExitList: false, breachedPasswordCheck: false}),
-		);
-		expect(config.torExitList.enabled).toBe(false);
+	it('lets an operator switch the lookup off when the instance is not self-hosted', () => {
+		const config = buildAPIConfigFromMaster(withOptionalOutboundLookups(master, false, {breachedPasswordCheck: false}));
 		expect(config.breachedPasswordCheck.enabled).toBe(false);
 	});
 });

@@ -3,6 +3,10 @@
 export const APP_PROTOCOL = 'fluxer';
 export const STABLE_APP_URL = 'https://koopa.ospinh.com';
 export const CANARY_APP_URL = 'https://koopa.ospinh.com';
+export const STABLE_MIGRATED_APP_ORIGIN = 'https://koopa.ospinh.com';
+export const CANARY_MIGRATED_APP_ORIGIN = 'https://koopa.ospinh.com';
+export const MIGRATED_APP_ENTRY_PATH = '/app';
+export const PASSKEY_RP_IDS = ['koopa.ospinh.com'] as const;
 export const STATIC_CDN_URL = 'https://koopa.ospinh.com';
 export const DEFAULT_WINDOW_WIDTH = 1280;
 export const DEFAULT_WINDOW_HEIGHT = 800;

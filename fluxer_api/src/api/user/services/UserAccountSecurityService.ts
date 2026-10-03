@@ -4,6 +4,7 @@ import type {ApiContext} from '@app/api/ApiContext';
 import * as AuthMfa from '@app/api/auth/AuthMfa';
 import * as AuthPassword from '@app/api/auth/AuthPassword';
 import * as AuthSession from '@app/api/auth/AuthSession';
+import {assertEmailNotBlocklisted} from '@app/api/auth/EmailBlocklist';
 import {deriveSudoMethods, userHasSudoCapability} from '@app/api/auth/services/SudoMethods';
 import type {SudoVerificationResult} from '@app/api/auth/services/SudoVerificationService';
 import {Config} from '@app/api/Config';
@@ -38,6 +39,11 @@ interface UserAccountSecurityServiceDeps {
 	discriminatorService: IDiscriminatorService;
 	rateLimitService: IRateLimitService;
 	limitConfigService: LimitConfigService;
+}
+
+export interface AuthSessionReplacement {
+	token: string;
+	authSessionIdHash: string;
 }
 
 export class UserAccountSecurityService {
@@ -138,6 +144,7 @@ export class UserAccountSecurityService {
 		}
 		if (rawEmail) {
 			if (normalizedEmail && normalizedEmail !== user.email?.toLowerCase()) {
+				await assertEmailNotBlocklisted(normalizedEmail, 'email');
 				const existing = await this.deps.userAccountRepository.findByEmail(normalizedEmail);
 				if (existing && existing.id !== user.id) {
 					throw InputValidationError.fromCode('email', ValidationErrorCodes.EMAIL_ALREADY_IN_USE);
@@ -156,12 +163,13 @@ export class UserAccountSecurityService {
 		user: User;
 		oldAuthSession: AuthSessionModel;
 		request: Request;
-	}): Promise<void> {
-		await AuthSession.replaceCurrentAuthSession(this.deps.apiContext, {
+	}): Promise<AuthSessionReplacement> {
+		const replacement = await AuthSession.replaceCurrentAuthSession(this.deps.apiContext, {
 			user,
 			currentAuthSession: oldAuthSession,
 			request,
 		});
+		return {token: replacement.token, authSessionIdHash: replacement.newAuthSessionIdHash};
 	}
 
 	private async createSudoModeRequiredError(user: User): Promise<SudoModeRequiredError> {
